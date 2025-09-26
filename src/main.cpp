@@ -2,6 +2,7 @@
 #include <LiquidCrystal_I2C.h>
 
 // === USER-CONFIGURABLE CONSTANTS ===
+const int EMPTY_VOLUME_CM = 50;  // Distance from sensor to max level of water in cm
 const float TANK_DEPTH_METERS = 4;  // Set your tank depth here
 const int TANK_DEPTH_CM = TANK_DEPTH_METERS * 100;
 
@@ -9,24 +10,15 @@ const int TANK_DEPTH_CM = TANK_DEPTH_METERS * 100;
 #define TRIG_PIN 27
 #define ECHO_PIN 26
 
+#define RELAY1_PIN 17
+#define RELAY2_PIN 5
+#define RELAY3_PIN 18
+#define RELAY4_PIN 19
+#define RELAY5_PIN 21
+#define RELAY6_PIN 22
+
 // === LCD Configuration ===
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // Change address to 0x3F if needed
-
-void setup() {
-  Serial.begin(115200);
-
-  // Setup pins for HC-SR04
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
-
-  // Initialize LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("Water Level Monitor");
-  delay(1000);
-  lcd.clear();
-}
 
 float measureDistanceCM() {
   digitalWrite(TRIG_PIN, LOW);
@@ -46,15 +38,14 @@ float measureDistanceCM() {
   return distance;
 }
 
-void loop() {
-  float distance = measureDistanceCM();
+void writeOnLCD(float distance)
+{
   lcd.clear();
-
   if (distance == -1) {
     lcd.setCursor(0, 0);
     lcd.print("Sensor Error");
   } else {
-    int level_cm = TANK_DEPTH_CM - distance;
+    int level_cm = TANK_DEPTH_CM - distance - EMPTY_VOLUME_CM;
     level_cm = max(0, min(level_cm, TANK_DEPTH_CM));
     float percentage = (level_cm * 100.0) / TANK_DEPTH_CM;
 
@@ -92,6 +83,41 @@ void loop() {
     Serial.print(percentage);
     Serial.println(" %");
   }
+}
 
-  delay(2000);
+void triggerRelays(float distance)
+{
+
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // Setup pins for HC-SR04
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
+  pinMode(RELAY5_PIN, OUTPUT);
+  pinMode(RELAY6_PIN, OUTPUT);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Water Level Monitor");
+  delay(1000);
+  lcd.clear();
+}
+
+void loop() {
+  float distance = measureDistanceCM();
+  writeOnLCD(distance);
+  triggerRelays(distance);
+  
+
+  delay(500);
 }
